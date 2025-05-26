@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* Spread Password in Memory */
 // Create multiple single-byte variables, each holding one character of the password.
 char a = 'd';
 char b = 'e';
@@ -32,8 +33,6 @@ int main()
         
     }
     pwd_buffer[sizeof(pwd_var)] = '\0';
-    
-    //printf("%s\n", pwd_buffer);
 
     /* Compare the input with the reconstructed password */
     // Check for equal character length.
