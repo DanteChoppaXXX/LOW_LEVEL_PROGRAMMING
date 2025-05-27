@@ -1,10 +1,17 @@
-/* Program Description */
+/* Program Description
+
+ * This program demonstrates a simple password check mechanism.
+ * The password is stored in a spread manner across multiple variables,
+ * and it is reconstructed at runtime for comparison with user input.
+ * Each byte of the password is obfuscated using a simple XOR operation with a key.
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #define KEY 0xa3
+#define PWD_LENGTH 8
 
 int main()
 {
@@ -23,7 +30,7 @@ int main()
     char user_input[10];
     
     char pwd_buffer[10];
-    char pwd_var[] = {a ^ KEY, b ^ KEY, c ^ KEY, d ^ KEY, e ^ KEY, f ^ KEY, g ^ KEY, h ^ KEY};
+    char pwd_var[] = {a, b, c, d, e, f, g, h};
 
     // Prompt the user to enter a password.
     printf("Enter The Password: ");
@@ -31,12 +38,12 @@ int main()
 
     /* Reconstruct the real password at runtime */
     // Copy each of the password characters into another buffer.
-    for (size_t i = 0; i < sizeof(pwd_var); i++)
+    for (size_t i = 0; i < PWD_LENGTH; i++)
     {
-        pwd_buffer[i] = pwd_var[i];
+        pwd_buffer[i] = pwd_var[i] ^ KEY;
         
     }
-    pwd_buffer[sizeof(pwd_var)] = '\0';
+    pwd_buffer[PWD_LENGTH] = '\0';
 
     /* Compare the input with the reconstructed password */
     // Check for equal character length.
@@ -47,7 +54,7 @@ int main()
     }
     
     // Do a manual character-by-character comparison (avoid using strcmp).
-    for (size_t i = 0; i < sizeof(pwd_var); i++)
+    for (size_t i = 0; i < PWD_LENGTH; i++)
     {
         if (user_input[i] != pwd_buffer[i])
         {
