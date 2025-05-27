@@ -137,12 +137,49 @@ Recover the password **without access to the source code** — using only the co
 
 ---
 
+
 ## ✅ Your Mission
 
 * Go ahead and reverse the binary.
 * Try to recover the full password without relying on the source code.
 * When you think you’ve found it, test it and confirm.
 
-Let me know once you've gotten the password or if you need help stepping through `objdump` or `gdb`.
+---
+# 🧪 **Stage 2 — XOR-encoding the password**
 
-You're doing exactly what a real reverse engineer would be doing — this is *hands-on mastery*.
+### 🧠 Goal:
+
+Hide the real password in an encoded form and decode it only during runtime, making it harder to find by scanning strings or looking at immediate values in disassembly.
+
+---
+
+### 🔐 Algorithm Outline:
+
+1. **Choose an encoding key**:
+
+   * Pick a single-byte XOR key (e.g., `0x5A`).
+
+2. **Preprocess the password**:
+
+   * XOR each character in the original password with the key.
+   * Hardcode the XORed bytes in your source (instead of the plain characters).
+
+3. **Decode at runtime**:
+
+   * At runtime, XOR the stored (encoded) bytes with the same key to retrieve the actual password.
+
+4. **Authenticate**:
+
+   * Take user input.
+   * Compare it with the decoded password manually, character by character.
+
+---
+
+### ✅ Verification Tips:
+
+Once you've written it:
+
+* Confirm that `strings` doesn’t reveal the plaintext password.
+* Use `objdump -d` and confirm the password isn't easily visible.
+* Try reverse engineering it yourself from the binary to simulate the challenge for others.
+
