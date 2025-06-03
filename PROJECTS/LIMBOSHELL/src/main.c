@@ -15,14 +15,8 @@ char username[16];
 
 void cmd_prompt()
 {
-    printf("%s🐚limbo:=> ", username);
+    printf("%s⛩ Limbo:=> ", username);
 }
-
-// void parser(char* command)
-// {
-    
-//     strcat(command, path);
-// }
 
 int main()
 {
@@ -52,9 +46,14 @@ int main()
         {
             break;
         }
-        
-        //buffer[strcspn(buffer, "\n")] = '\0';
-        //printf("%s\n", buffer);
+
+        /* INPUT VALIDATION TIME */
+        // Check if the input buffer is empty.
+        if (strlen(buffer) == 0)
+        {
+            printf("❌ Command not found!\n");
+            continue;
+        }
 
         /* COMMAND PARSING TIME */
         int argc = 0;
@@ -70,13 +69,10 @@ int main()
         
         char path[] = "/usr/bin/";
 
-        // Call the parser function.
-        printf("%s\n", command[0]);
 
         command[0] = strcat(path, command[0]);
-        //parser(command[0]);
-
-        printf("%s\n", command[0]);
+    
+        
 
         /* EXECUTION TIME */
         // Create new process for the command.
