@@ -55,6 +55,8 @@
         "ios": "c",
         "locale": "c",
         "numbers": "c",
-        "queue": "c"
+        "queue": "c",
+        "syscall.h": "c",
+        "unistd.h": "c"
     }
 }

@@ -54,6 +54,22 @@ int main()
             printf("❌ Command not found!\n");
             continue;
         }
+        //  Check if user typed exit command.
+        if (strcmp(buffer, "exit\n") == 0 || strcmp(buffer, "exit") == 0)
+        {
+            printf("Exiting Limbo shell...\n");
+            free(command);
+            exit(EXIT_SUCCESS);
+        }
+        
+        // Check if user pressed enter without typing anything OR typed only spaces or tabs.
+        if (strspn(buffer, " \t\n") == strlen(buffer))
+        {
+            //printf("❌ Command not found!\n");
+            continue;
+        }
+        // Remove trailing newline character from the input buffer.
+        buffer[strcspn(buffer, "\n")] = '\0';
 
         /* COMMAND PARSING TIME */
         int argc = 0;
@@ -71,8 +87,16 @@ int main()
 
 
         command[0] = strcat(path, command[0]);
-    
-        
+
+        // Check if the command exist among system commands.
+        if (access(command[0], X_OK) == -1)
+        {
+            printf("❌ Command not found!\n");
+            continue;
+        }
+
+        // Handle shell-builtins that must execute in the parent process.
+        /* code */
 
         /* EXECUTION TIME */
         // Create new process for the command.
