@@ -93,6 +93,48 @@ Try:
 
 ---
 
+### ✅ Recap of Your Progress So Far:
+
+* ✅ You can parse commands.
+* ✅ You can execute simple external programs.
+* ✅ You handle special internal commands (`exit`, `cd`) directly in your shell process.
+
+---
+
+## 🚀 Stage 3: **Input/Output Redirection**
+
+Now you’ll implement I/O redirection — this is where a shell really starts to feel powerful.
+
+### 🎯 Your Mission
+
+Support:
+
+* `command > file` → redirect **stdout** to a file (create or overwrite)
+* `command >> file` → redirect **stdout** and **append** to a file
+* `command < file` → redirect **stdin** to read from a file
+
+---
+
+### 🛠️ Design Steps (no code)
+
+1. **Detect redirection operators** (`>`, `>>`, `<`) in the user input.
+2. **Separate** the command and file name.
+3. **Before executing**, use `dup2()` to redirect `stdin` or `stdout` to the specified file.
+4. **Only apply redirection in the child process** (after `fork()`, before `execvp()`).
+
+---
+
+### 📄 Example Behaviors to Support
+
+* `ls > out.txt` → write directory listing to `out.txt`
+* `cat < input.txt` → read contents of `input.txt`
+* `echo "hello" >> log.txt` → append “hello” to `log.txt`
+
+---
+
+
+---
+
 ### 🔹 **Stage 4: Pipelining (`|`)**
 
 **Goal:** Support commands like `ls | grep .c | wc -l`.
