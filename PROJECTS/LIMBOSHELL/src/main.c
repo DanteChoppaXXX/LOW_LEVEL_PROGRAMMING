@@ -20,8 +20,6 @@ void cmd_prompt()
 
 int main()
 {
-    // List of commands for the shell.
-    //char*  commands[] = {"/usr/bin/ls", "/usr/bin/echo", "/usr/bin/pwd", NULL};
 
     printf("Enter a username: ");
     fgets(username, sizeof(username), stdin);
@@ -29,14 +27,8 @@ int main()
 
     char buffer[BUFFER_SIZE];
     char* delim = " \n\t";
-    char** command = malloc(sizeof(char *) * MAX_ARGS);
-    if (command == NULL)
-    {
-        perror("Failed to allocate memory!");
-        return EXIT_FAILURE;
-    }
-    
-    
+    char** command = NULL;
+        
     // Infinite user prompt loop.
     while (1)
     {
@@ -58,7 +50,6 @@ int main()
         if (strcmp(buffer, "exit\n") == 0 || strcmp(buffer, "exit") == 0)
         {
             printf("Exiting Limbo shell...\n");
-            free(command);
             exit(EXIT_SUCCESS);
         }
         
@@ -72,8 +63,18 @@ int main()
         buffer[strcspn(buffer, "\n")] = '\0';
 
         /* COMMAND PARSING TIME */
+        // Allocate memory for command arguments.
+        command = malloc(sizeof(char *) * MAX_ARGS);
+        if (command == NULL)
+        {
+            perror("Failed to allocate memory!");
+            return EXIT_FAILURE;
+        }
+        
+        // Tokenize the input buffer to extract command and arguments.
         int argc = 0;
         char* token = strtok(buffer, delim);
+
         while (token != NULL && argc < MAX_ARGS - 1)
         {
             command[argc] = token;
@@ -83,8 +84,15 @@ int main()
         
         command[argc] = NULL;
         
+        /* Handle shell-builtins that must execute in the parent process */
+        // Handling "cd" command.
+        if (strcmp(command[0], "cd") == 0)
+        {
+            chdir(command[1]);
+            continue;
+        }
+        
         char path[] = "/usr/bin/";
-
 
         command[0] = strcat(path, command[0]);
 
@@ -95,8 +103,6 @@ int main()
             continue;
         }
 
-        // Handle shell-builtins that must execute in the parent process.
-        /* code */
 
         /* EXECUTION TIME */
         // Create new process for the command.
@@ -104,7 +110,8 @@ int main()
         if (pid == -1)
         {
             perror("Failed to fork process!");
-            return EXIT_FAILURE;
+            free(command);
+            exit(EXIT_FAILURE);
         }
 
         if (pid == 0)
@@ -112,7 +119,9 @@ int main()
             execv(command[0], command);
 
             perror("execv failed!");
-            return EXIT_FAILURE;
+            free(command);
+            // If execv fails, we exit the child process.
+            exit(EXIT_FAILURE);
         }
         else
         {
