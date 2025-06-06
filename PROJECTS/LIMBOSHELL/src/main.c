@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
+#include <fcntl.h> 
 
 #define BUFFER_SIZE 64
 #define MAX_ARGS 10
@@ -40,12 +42,6 @@ int main()
         }
 
         /* INPUT VALIDATION TIME */
-        // Check if the input buffer is empty.
-        if (strlen(buffer) == 0)
-        {
-            printf("❌ Command not found!\n");
-            continue;
-        }
         //  Check if user typed exit command.
         if (strcmp(buffer, "exit\n") == 0 || strcmp(buffer, "exit") == 0)
         {
@@ -56,9 +52,9 @@ int main()
         // Check if user pressed enter without typing anything OR typed only spaces or tabs.
         if (strspn(buffer, " \t\n") == strlen(buffer))
         {
-            //printf("❌ Command not found!\n");
             continue;
         }
+
         // Remove trailing newline character from the input buffer.
         buffer[strcspn(buffer, "\n")] = '\0';
 
@@ -83,6 +79,8 @@ int main()
         }
         
         command[argc] = NULL;
+
+        
         
         /* Handle shell-builtins that must execute in the parent process */
         // Handling "cd" command.
@@ -93,9 +91,9 @@ int main()
         }
         
         char path[] = "/usr/bin/";
-
+        
         command[0] = strcat(path, command[0]);
-
+        
         // Check if the command exist among system commands.
         if (access(command[0], X_OK) == -1)
         {
@@ -103,6 +101,64 @@ int main()
             continue;
         }
 
+        if (argc <= 2)
+        {
+            /* EXECUTION TIME */
+            // Create new process for the command.
+            pid_t pid = fork();
+            if (pid == -1)
+            {
+                perror("Failed to fork process!");
+                free(command);
+                exit(EXIT_FAILURE);
+            }
+
+            if (pid == 0)
+            {
+                execv(command[0], command);
+
+                perror("execv failed!");
+                free(command);
+                // If execv fails, we exit the child process.
+                exit(EXIT_FAILURE);
+            }
+            else
+            {
+                // Parent process.
+                wait(NULL);
+                printf("✔\n");
+                free(command);
+                continue;
+            }        
+
+        }
+
+
+        /* INPUT/OUTPUT REDIRECTION */
+        // Detect redirection operators (>, >>, <) in the user input.
+
+        int fd, fd2;
+        fd2 = STDOUT_FILENO;
+        
+        if (strcmp(command[argc - 2], ">") == 0)
+        {
+            fd = open(command[argc - 1], O_WRONLY|O_CREAT|O_APPEND, S_IRUSR|S_IWUSR);
+            if (fd == -1)
+            {
+                perror("Failed to open file!");
+            }
+            command[argc - 2] = NULL;         
+            
+        }else if (strcmp(command[argc - 2], "<") == 0)
+        {
+            fd = open(command[argc - 1], O_RDONLY);
+            if (fd == -1)
+            {
+                perror("Failed to open file!");
+            }
+            command[argc - 2] = NULL;
+            fd2 = STDIN_FILENO;   
+        }
 
         /* EXECUTION TIME */
         // Create new process for the command.
@@ -116,6 +172,8 @@ int main()
 
         if (pid == 0)
         {
+            dup2(fd, fd2);
+            close(fd);
             execv(command[0], command);
 
             perror("execv failed!");
@@ -126,6 +184,7 @@ int main()
         else
         {
             // Parent process.
+            close(fd);
             wait(NULL);
             printf("✔\n");
             free(command);
