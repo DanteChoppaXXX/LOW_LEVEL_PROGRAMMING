@@ -147,6 +147,130 @@ Support:
 
 ---
 
+### 📝**Stage 4: Pipes (`|`)** step by step break down.
+
+---
+
+## 🔧 What Are Pipes?
+
+A **pipe** connects the output of one process to the input of another.
+
+Example:
+
+```bash
+cat file.txt | grep hello | sort
+```
+
+This is equivalent to:
+
+```c
+int pipefd[2];
+pipe(pipefd);
+dup2(pipefd[1], STDOUT_FILENO); // for cat
+dup2(pipefd[0], STDIN_FILENO);  // for grep
+```
+
+---
+
+## 🧠 How Your Shell Should Think
+
+1. **Split the command on `|`**
+
+   * Input: `"cat file.txt | grep hello | sort"`
+   * After splitting:
+
+     * `cat file.txt`
+     * `grep hello`
+     * `sort`
+
+2. **You need to fork for each command**
+
+   * For `n` commands, you’ll need `n` child processes.
+   * Each command’s `stdout` should feed into the next command’s `stdin`.
+
+---
+
+## 📦 Pipe Mechanics in Shell
+
+Let’s say there are **N** commands:
+
+```
+cmd1 | cmd2 | cmd3 | ... | cmdN
+```
+
+You need:
+
+* **N−1 pipes**, each connecting a command to the next.
+* A loop that:
+
+  * Creates the pipes
+  * Forks the children
+  * Sets up proper `dup2()` to connect them
+  * Closes unused file descriptors
+
+---
+
+## 🌀 Example Execution Flow
+
+Suppose you’re processing:
+`ls -l | grep .c | wc -l`
+
+### 1. Shell splits the commands:
+
+```
+cmds = ["ls -l", "grep .c", "wc -l"]
+```
+
+### 2. For each command:
+
+* Create a `pipe()` (except for the last one).
+* Fork a child:
+
+  * If it’s **not the first**, connect its `stdin` to the *read end* of the previous pipe.
+  * If it’s **not the last**, connect its `stdout` to the *write end* of the current pipe.
+  * `execvp()` the command.
+* Parent:
+
+  * Closes all pipe ends not needed.
+  * Waits for children at the end.
+
+---
+
+## 📍 What You Need to Implement
+
+* A parser that identifies and splits pipe segments.
+* A loop that:
+
+  * Tracks previous and current pipes
+  * Redirects FDs properly using `dup2`
+  * Calls `fork()` + `execvp()` for each segment
+* Proper closing of pipe ends after use
+* `waitpid()` for all children
+
+---
+
+## 🧠 Mental Checklist per Command Segment:
+
+For command `i` out of `N`:
+
+* **stdin**:
+
+  * Default unless `i > 0` → redirect from previous pipe read-end
+* **stdout**:
+
+  * Default unless `i < N-1` → redirect to current pipe write-end
+* **Close** all pipe FDs not in use in each process
+
+---
+
+## 🧘 Advice Before You Begin
+
+* Do **not** rush. Pipes are tricky. Think in terms of **data flow** between processes.
+* Draw a diagram of pipes and file descriptors.
+* Consider starting with just 2 commands to test it (`ls | wc`) before scaling to multiple.
+
+---
+
 ### 🔹 **Stage 5: Background Execution (`&`)**
 
 **Goal:** Allow `./longtask &` and don’t block the shell.
