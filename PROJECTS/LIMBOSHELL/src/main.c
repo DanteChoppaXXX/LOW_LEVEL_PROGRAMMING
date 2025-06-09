@@ -136,7 +136,7 @@ int main()
                 // Parent process.
                 wait(NULL);
                 printf("✔\n");
-                free(command);
+                //free(command);
                 continue;
             }        
 
@@ -230,23 +230,9 @@ void command_piping(char* buffer, char** command)
     
     command[argc] = NULL;
 
-    char path[] = "/usr/bin/";
-
     char** argv = NULL;
-    //int pipeindex[2];
-    
-    for (int i = 0; i < argc; i++)
-    {
-        //strcpy(commands[i], command[i]);
-        printf("Command=> %s ", command[i]);
 
-    }
-    printf("\n");
-    //printf("Command=> %s %s %s & %s\n", command[0], command[2], commands[3], commands[4]);
-    
-    
-    
-    argv = malloc(MAX_ARGS * sizeof(char *));
+    argv = malloc(sizeof(char *) * MAX_ARGS);
     if (argv == NULL)
     {
         perror("Failed to allocate memory!");
@@ -258,10 +244,11 @@ void command_piping(char* buffer, char** command)
     
     int pipefd[2];
     int prev_read = -1;     // Read-end of the previous pipe.
-
+    
     // For each command create a pipe() (except for the last one).
-    for (int i = 0; i < argc - 1; i++)
+    for (int i = 0; i < argc; i++)
     {
+        char path[20] = "/usr/bin/";
         
         int j = 0;
         char* token = strtok(command[i], " ");
@@ -282,7 +269,7 @@ void command_piping(char* buffer, char** command)
         // Check if the command exist among system commands.
         if (access(argv[0], X_OK) == -1)
         {
-            printf("❌ Command not found!\n");
+            printf("❌ Command \"%s\" not found!\n", argv[0]);
         }
         
         if (i < argc - 1)
@@ -291,13 +278,13 @@ void command_piping(char* buffer, char** command)
             if (pipe(pipefd) == -1 )
             {
                 perror("pipe failed!");
-                free(command);
                 exit(EXIT_FAILURE);
             }
         }
-
+        
         // Create new process for the command.
         pid_t pid = fork();
+        
         if (pid == -1)
         {
             perror("Failed to fork process!");
@@ -308,8 +295,9 @@ void command_piping(char* buffer, char** command)
 
         if (pid == 0)
         {
+            printf("🚀 Executing %s 🚀\n", argv[0]);
             // CHILD PROCESS
-            // If not first command, replace stdin with previous pipe read-end.
+            // If not first command, replace stdin with previous pipe read-end.            
             if (prev_read != -1)
             {
                 dup2(prev_read, STDIN_FILENO);
@@ -328,8 +316,6 @@ void command_piping(char* buffer, char** command)
             execv(argv[0], argv);
             
             perror("execv failed!");
-            free(command);
-            free(argv);
             // If execv fails, we exit the child process.
             exit(EXIT_FAILURE);
             
@@ -362,8 +348,7 @@ void command_piping(char* buffer, char** command)
     for (int i = 0; i < argc; i++)
     {
         wait(NULL);
-        free(argv);
         
     }
-    free(command);
+
 }
