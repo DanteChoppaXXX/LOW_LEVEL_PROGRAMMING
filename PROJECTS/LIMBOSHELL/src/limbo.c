@@ -36,11 +36,11 @@ int main(void)
 
         buffer[strcspn(buffer, "\n")] = '\0';
 
-        // if (is_pipe_present(buffer)) 
-        // {
-        //     run_command_with_pipe(buffer);
-        //     continue;
-        // }
+        if (is_pipe_present(buffer)) 
+        {
+            run_command_with_pipe(buffer);
+            continue;
+        }
 
     
         int argc;
