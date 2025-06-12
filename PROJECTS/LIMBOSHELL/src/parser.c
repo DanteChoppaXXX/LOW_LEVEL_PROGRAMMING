@@ -27,14 +27,16 @@ int is_pipe_present(const char* buffer)
 }
 int is_redirection_present(char** args, int argc)
 {
+    int flag = 0;
     for (int i = 0; i < argc; i++)
     {
         if (strcmp(args[i], ">") == 0 || strcmp(args[i], ">>") == 0 || strcmp(args[i], "<") == 0)
         {
+            flag = 1;
             break;
         }
     }
-    return 1;
+    return flag;
     
 }
 void trim_whitespace(char* str);
