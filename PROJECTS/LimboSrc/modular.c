@@ -39,9 +39,11 @@ int main(void) {
 
         if (is_builtin(args[0])) {
             handle_builtin(args);
-        } else if (is_redirection_present(args)) {
-            handle_redirection(args);
-        } else {
+        } 
+        // else if (is_redirection_present(args)) {
+        //     handle_redirection(args);
+        // } 
+        else {
             execute_command(args);
         }
     }

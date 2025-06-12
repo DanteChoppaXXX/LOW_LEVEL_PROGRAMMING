@@ -58,6 +58,10 @@
         "queue": "c",
         "syscall.h": "c",
         "unistd.h": "c",
-        "wait.h": "c"
+        "wait.h": "c",
+        "executor.h": "c",
+        "idtype_t.h": "c",
+        "types.h": "c",
+        "parser.h": "c"
     }
 }
