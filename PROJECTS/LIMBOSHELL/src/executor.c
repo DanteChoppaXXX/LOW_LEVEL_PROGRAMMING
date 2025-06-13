@@ -11,51 +11,68 @@
 
 
 
-int execute_command(char** args)
+int execute_command(char** args, int argc)
 {
     char cmd[25];
-    // Check if the command exist among system commands.
+
+    // Check if the command exists.
     if (strchr(args[0], '/') == NULL)
     {
         snprintf(cmd, sizeof(cmd), "/usr/bin/%s", args[0]);
-        
+
         if (access(cmd, X_OK) == -1)
         {
-            printf("❌ Command %s not found!\n", cmd);
+            printf("❌ Command %s not found!\n", args[0]);
             return 0;
         }
     }
-    
 
-    /* EXECUTION TIME */
-    // Create new process for the command.
+    // Check if it's a background command.
+    int background = 0;
+    if (strcmp(args[argc - 1], "&") == 0)
+    {
+        background = 1;
+        args[argc - 1] = NULL;  // ✅ Proper null-termination
+        argc--;
+    }
+
     pid_t pid = fork();
+
     if (pid == -1)
     {
         perror("Failed to fork process!");
-        //free(command);
         exit(EXIT_FAILURE);
     }
 
     if (pid == 0)
     {
+        // Child process
+        setpgid(0, 0);  // ✅ Always set PGID to detach from shell control
+
         execvp(args[0], args);
 
-        perror("execv failed!");
-        //free(command);
-        // If execv fails, we exit the child process.
+        perror("execvp failed");
         exit(EXIT_FAILURE);
     }
     else
     {
-        // Parent process.
-        wait(NULL);
-        printf("✔\n");
-        //free(command);
-    }        
+        // Parent process
+        if (!background)
+        {
+            waitpid(pid, NULL, 0);
+            printf("✔\n");
+        }
+        else
+        {
+            printf("✔ Background job started [PID %d]\n", pid);
+            fflush(stdout);
+            printf("\n");  // ✅ Ensure prompt doesn't get overwritten
+        }
+    }
 
     return EXIT_SUCCESS;
 }
+
 int handle_redirection(char** args, int argc)
 {
     

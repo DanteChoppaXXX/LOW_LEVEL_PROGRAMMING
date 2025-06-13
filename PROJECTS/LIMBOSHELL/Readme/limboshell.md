@@ -283,6 +283,87 @@ For command `i` out of `N`:
 
 ---
 
+## 🧠 Background Execution — Walkthrough
+
+### 🔍 What You're Adding
+
+If the user types:
+
+```bash
+sleep 5 &
+```
+
+Your shell:
+
+* Launches the command in the background
+* Does **not** wait for it to finish
+* Immediately returns to the prompt
+
+---
+
+### 1. 🔎 **Detect the `&`**
+
+Look for an ampersand `&` **at the end** of the command input.
+
+You'll need to:
+
+* Check if the **last token** is `&`
+* If yes, set a `background = 1` flag
+* **Remove** the `&` from the command list so `execv` doesn’t get confused
+
+---
+
+### 2. 🧠 **Avoid Waiting**
+
+If it's a background process:
+
+* You **do not call** `wait()` in the parent process
+* You just print the prompt again
+
+If it’s **not** a background process:
+
+* Call `wait()` like normal
+
+---
+
+### 3. 🧼 Optional: Handle Zombie Processes
+
+You can make your shell automatically clean up finished background processes using:
+
+```c
+signal(SIGCHLD, SIG_IGN);
+```
+
+This avoids having zombie processes, but you can add this later after the main logic works.
+
+---
+
+### 4. ⚠️ Piping & Redirection
+
+For now, **only support backgrounding regular commands**, not pipelines like:
+
+```bash
+cat file.txt | grep something &
+```
+
+You can handle advanced cases later.
+
+---
+
+### 🔚 Summary
+
+| Feature            | What To Do                                   |
+| ------------------ | -------------------------------------------- |
+| `&` detected       | Set `background = 1`, remove `&` from args   |
+| Background process | Don’t `wait()`                               |
+| Foreground process | `wait()` like before                         |
+| Prompt behavior    | Always return to prompt after spawning child |
+
+---
+
+
+---
+
 ## 🧠 Advanced Ideas (for later)
 
 * **Command history** (like pressing up arrow)

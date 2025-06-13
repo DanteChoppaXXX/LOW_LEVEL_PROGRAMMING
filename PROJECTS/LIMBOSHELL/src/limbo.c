@@ -1,6 +1,10 @@
+#define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
+#include <wait.h>
+#include <errno.h>
 #include "parser.h"
 #include "executor.h"
 #include "builtin.h"
@@ -8,18 +12,59 @@
 
 #define BUFFER_SIZE 64
 
+char username[16];
+
+void handle_sigchld(int sig) 
+{
+    (void)sig; // Silence unused warning
+
+    int saved_errno = errno;
+    pid_t pid;
+    int status;
+
+    // Loop to handle multiple terminated children
+    while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
+        if (WIFEXITED(status)) {
+            printf("\n✔ Background job (PID %d) completed with exit status %d\n", pid, WEXITSTATUS(status));
+        } else if (WIFSIGNALED(status)) {
+            printf("\n✖ Background job (PID %d) terminated by signal %d\n", pid, WTERMSIG(status));
+        } else {
+            printf("\n⚠ Background job (PID %d) ended unexpectedly\n", pid);
+        }
+
+        // Re-print the prompt so user isn't confused
+        cmd_prompt(username);
+        fflush(stdout);
+    }
+
+    errno = saved_errno;
+}
+
 int main(void)
 {
-    char username[16];
+    //setup_sigchld_handler();
+
+    // Set up SIGCHLD handler for background jobs
+    struct sigaction sa;
+    sa.sa_handler = &handle_sigchld;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART | SA_NOCLDSTOP; // Restart syscalls & ignore stopped children
+
+    if (sigaction(SIGCHLD, &sa, NULL) == -1) {
+        perror("sigaction");
+        exit(EXIT_FAILURE);
+    }
+
     printf("Enter a username: ");
     fgets(username, sizeof(username), stdin);
     username[strcspn(username, "\n")] = '\0';
-
+    
     char buffer[BUFFER_SIZE];
     char* args[MAX_ARGS];
-
+    
     while (1)
     {
+        waitpid(-1, NULL, WNOHANG);
         cmd_prompt(username);
 
         if (fgets(buffer, BUFFER_SIZE, stdin) == NULL) break;
@@ -56,8 +101,9 @@ int main(void)
         }
         else 
         {
-            execute_command(args);
+            execute_command(args, argc);
         }
+
     }
     
 
