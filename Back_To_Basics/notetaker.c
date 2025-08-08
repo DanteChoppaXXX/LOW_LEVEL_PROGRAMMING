@@ -22,12 +22,12 @@ void usage(char *prog_name, char *filename)
 //
 int main(int argc, char *argv[])
 {
-    int fd; // File descriptor.
+    int userid, fd; // File descriptor.
     char *buffer, *datafile;
 
     buffer = (char *)ec_malloc(100);
     datafile = (char *)ec_malloc(20);
-    strcpy(datafile, "/tmp/notes");
+    strcpy(datafile, "/var/notes");
 
     // Check for command-line arguments.
     if (argc < 2)
@@ -40,7 +40,6 @@ int main(int argc, char *argv[])
     printf("[DEBUG] buffer   @ %p: \'%s\'\n", buffer, buffer);
     printf("[DEBUG] datafile @ %p: \'%s\'\n", datafile, datafile);
 
-    strncat(buffer, "\n", 2); // Add a newline on the end.
 
     // Opening file.
     fd = open(datafile, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
@@ -50,11 +49,20 @@ int main(int argc, char *argv[])
     }
     printf("[DEBUG] file descriptor is %d\n", fd);
 
+    userid = getuid();  // Get the real user ID.
+
     // Writing data
-    if (write(fd, buffer, strlen(buffer)) == -1)
+    if (write(fd, &userid, 4) == -1)    // Write user ID before note data.
+    {
+        fatal("in main() while writing userid to file");
+    }
+    write(fd, "\n", 1);    // Add a newline on the end.
+
+    if (write(fd, buffer, strlen(buffer)) == -1)    // Write note.
     {
         fatal("in main() while writing buffer to file");
     }
+    write(fd, "\n", 1);    // Add a newline on the end.
 
     // Closing file
     if (close(fd) == -1)
