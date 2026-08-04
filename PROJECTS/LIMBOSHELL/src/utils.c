@@ -1,14 +1,12 @@
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <sys/wait.h>
-#include <signal.h>
 #include <unistd.h>
-#include <errno.h>
 #include "utils.h"
 
 void cmd_prompt(const char* username)
 {
-    printf("%s⛩ Limbo:=> ", username);
+    printf("\033[1;32m%s\033[1;33m@\033[1;31mLimbo:=>\033[1;97m ", username);
 }
 void shell_error(const char* msg);
 void safe_free(void* ptr);
